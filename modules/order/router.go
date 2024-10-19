@@ -1,8 +1,11 @@
 package order
 
 import (
+	"fmt"
 	"instalasi-pro/database"
 	helper "instalasi-pro/helpers"
+	"instalasi-pro/middleware/auth"
+	"instalasi-pro/modules/user"
 	"net/http"
 	"strconv"
 
@@ -11,12 +14,13 @@ import (
 
 func Initiator(router *gin.Engine) {
 	api := router.Group("/api/orders")
+	api.Use(auth.AuthMiddleware())
 	{
 		api.GET("/", FindAll)
 		api.GET("/:id", FindById)
 		api.GET("/user/:id", FindByUserID)
 		api.POST("/", Save)
-		api.PUT("/:id", Update)
+		// api.PUT("/:id", Update)
 	}
 }
 
@@ -75,6 +79,11 @@ func FindByUserID(c *gin.Context) {
 }
 
 func Save(c *gin.Context) {
+	if isCustomer, err := CheckIfCustomer(c); err != nil || !isCustomer {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
 	var input OrderInput
 
 	err := c.ShouldBindJSON(&input)
@@ -86,8 +95,12 @@ func Save(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, response)
 		return
 	}
+	currentUser := c.MustGet("currentUser").(user.User)
 
-	order, err := NewService(NewRepository(database.DB)).Save(input)
+	input.User = currentUser
+
+	order, err := NewService(NewRepository(database.DB)).CreateOrder(input)
+
 	if err != nil {
 		response := helper.APIResponse("Failed to create order", http.StatusBadRequest, "error", nil)
 		c.JSON(http.StatusBadRequest, response)
@@ -96,4 +109,19 @@ func Save(c *gin.Context) {
 
 	response := helper.APIResponse("Success to create order", http.StatusOK, "success", order)
 	c.JSON(http.StatusOK, response)
+}
+
+func CheckIfCustomer(c *gin.Context) (bool, error) {
+	currentUser, exists := c.MustGet("currentUser").(user.User)
+
+	fmt.Println(currentUser)
+	if !exists {
+		return false, fmt.Errorf("User not authenticated")
+	}
+
+	if currentUser.Role != "customer" {
+		return false, fmt.Errorf("Only customers can create orders")
+	}
+
+	return true, nil
 }

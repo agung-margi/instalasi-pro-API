@@ -2,7 +2,9 @@ package user
 
 import (
 	"errors"
-	auth "instalasi-pro/middleware/auth"
+	"fmt"
+	"instalasi-pro/middleware/jwt"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -53,7 +55,8 @@ func (s *userService) Login(input UserInput) (string, error) {
 		return "", errors.New("email or password is incorrect")
 	}
 
-	token, err := auth.NewService().GenerateToken(user.ID)
+	token, err := jwt.GenerateToken(user.ID, user.Role, 1*time.Hour)
+	fmt.Println("User Role:", user.Role)
 	if err != nil {
 		return "", err
 	}

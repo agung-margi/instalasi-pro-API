@@ -2,7 +2,7 @@ package order
 
 type Service interface {
 	CreateOrder(input OrderInput) (Order, error)
-	// Update(id int, order Order) (Order, error)
+	Update(id int, order Order) (Order, error)
 	// FindAll() ([]Order, error)
 	// FindById(id int) (Order, error)
 	// FindByUserID(id int) ([]Order, error)
@@ -16,12 +16,17 @@ func NewService(repository Repository) *service {
 	return &service{repository}
 }
 
-func (s *service) Save(order Order) (Order, error) {
-	order, err := s.repository.Save(order)
-	if err != nil {
-		return order, err
+func (s *service) CreateOrder(input OrderInput) (Order, error) {
+	order := Order{
+		ProductID: input.ProductID,
+		UserID:    input.User.ID,
+		Status:    "pending",
 	}
-	return order, nil
+	newOrder, err := s.repository.Create(order)
+	if err != nil {
+		return newOrder, err
+	}
+	return newOrder, nil
 }
 
 func (s *service) Update(id int, order Order) (Order, error) {

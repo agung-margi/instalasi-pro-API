@@ -1,57 +1,90 @@
 package auth
 
 import (
-	"errors"
-	"log"
+	"fmt"
+	"net/http"
 	"os"
 
+	"strings"
+
+	helper "instalasi-pro/helpers"
+	"instalasi-pro/modules/user"
+
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
 type Service interface {
-	GenerateToken(userID int) (string, error)
-	ValidateToken(encodedToken string) (*jwt.Token, error)
+	AuthMiddleware() gin.HandlerFunc
 }
 
-type jwtService struct {
-	JWT_SECRET_KEY []byte
+type Claims struct {
+	UserID    int    `json:"user_id"`
+	RoleUser  string `json:"role"`
+	ExpiresAt int64  `json:"exp"` // Gunakan int64 untuk expiration
+	jwt.StandardClaims
 }
 
-func NewService() *jwtService {
+func AuthMiddleware() gin.HandlerFunc {
+	var jwtKey = []byte(os.Getenv("JWT_SECRET_KEY"))
 
-	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
-
-	if jwtSecretKey == "" {
-		log.Fatal("jwt secret key is not defined")
-	}
-	return &jwtService{
-		JWT_SECRET_KEY: []byte(jwtSecretKey),
-	}
-}
-
-func (s *jwtService) GenerateToken(userID int) (string, error) {
-	claim := jwt.MapClaims{}
-	claim["user_id"] = userID
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	signedToken, err := token.SignedString(s.JWT_SECRET_KEY)
-
-	if err != nil {
-		return signedToken, err
-	}
-	return signedToken, nil
-}
-
-func (s *jwtService) ValidateToken(encodedToken string) (*jwt.Token, error) {
-	token, err := jwt.Parse(encodedToken, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-
-		if !ok {
-			return nil, errors.New("invalid token")
+	fmt.Println("JWT_SECRET_KEY:", jwtKey)
+	return func(c *gin.Context) {
+		fmt.Println("AuthMiddleware called")
+		token := c.Request.Header.Get("Authorization")
+		fmt.Println("Token:", token)
+		if token == "" {
+			response := helper.APIResponse("The request is unauthenticated.", http.StatusUnauthorized, "error", nil)
+			c.JSON(http.StatusUnauthorized, response)
+			c.Abort()
+			return
 		}
-		return []byte(s.JWT_SECRET_KEY), nil
-	})
-	if err != nil {
-		return token, err
+
+		parts := strings.Split(token, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			response := helper.APIResponse("Invalid token format.", http.StatusUnauthorized, "error", nil)
+			c.JSON(http.StatusUnauthorized, response)
+			c.Abort()
+			return
+		}
+
+		token = parts[1]
+
+		fmt.Println("Token:", token)
+		claims := jwt.MapClaims{}
+		_, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
+			return jwtKey, nil
+		})
+		if err != nil {
+			fmt.Println("Error parsing token:", err) // Log error spesifik
+			response := helper.APIResponse("Invalid or expired token.", http.StatusUnauthorized, "error", nil)
+			c.JSON(http.StatusUnauthorized, response)
+			c.Abort()
+			return
+		}
+
+		// fmt.Println("Token Claims:", claims)
+		fmt.Println("Token Claims:", claims["exp"])
+		fmt.Println("Token Claims:", claims["role"])
+
+		// if err != nil || !tkn.Valid {
+		// 	response := helper.APIResponse("Invalid or expired token.", http.StatusUnauthorized, "error", nil)
+		// 	c.JSON(http.StatusUnauthorized, response)
+		// 	c.Abort()
+		// 	return
+		// }
+
+		userID, okID := claims["user_id"].(float64)
+		role, okRole := claims["role"].(string)
+		exp, okExp := claims["exp"].(float64)
+
+		if okID && okRole && okExp {
+			fmt.Printf("UserID: %d, Role: %s, Exp: %f\n", int(userID), role, exp)
+		} else {
+			fmt.Println("Invalid claims.")
+		}
+
+		c.Set("currentUser", user.User{ID: int(userID), Role: role})
+		c.Next()
 	}
-	return token, nil
 }

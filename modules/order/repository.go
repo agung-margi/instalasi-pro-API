@@ -10,7 +10,7 @@ type Repository interface {
 	FindAll() ([]Order, error)
 	FindById(id int) (Order, error)
 	FindByUserID(id int) ([]Order, error)
-	Save(order Order) (Order, error)
+	Create(order Order) (Order, error)
 	Update(id int, order Order) (Order, error)
 }
 
@@ -36,7 +36,7 @@ func (r *repository) FindByUserID(id int) ([]Order, error) {
 	return orders, err
 }
 
-func (r *repository) Save(order Order) (Order, error) {
+func (r *repository) Create(order Order) (Order, error) {
 	err := r.db.Create(&order).Error
 	if err != nil {
 		return order, err
