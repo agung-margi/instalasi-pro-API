@@ -2,14 +2,22 @@ package main
 
 import (
 	"fmt"
+	"instalasi-pro/database"
+	"instalasi-pro/modules/product"
+	"instalasi-pro/modules/user"
 	"log"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	router := gin.Default()
+	database.Connection()
+	database.DB.AutoMigrate(&user.User{})
+	database.DB.AutoMigrate(&product.Product{})
 
+	router := gin.Default()
+	user.Initiator(router)
+	product.Initiator(router)
 	router.SetTrustedProxies(nil)
 
 	go func() {
@@ -20,4 +28,5 @@ func main() {
 
 	fmt.Println("Server berjalan pada http://localhost:8080")
 	select {}
+
 }
