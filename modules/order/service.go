@@ -4,6 +4,7 @@ type Service interface {
 	CreateOrder(input OrderInput) (Order, error)
 	Update(id int, order Order) (Order, error)
 	UpdatePickup(id int, updateOrder Order) ([]Order, error)
+	UpdateProgress(id int, updateOrder Order) ([]Order, error)
 	// FindAll() ([]Order, error)
 	FindById(id int) (Order, error)
 	// FindByUserID(id int) ([]Order, error)

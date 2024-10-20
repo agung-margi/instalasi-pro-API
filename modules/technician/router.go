@@ -14,6 +14,7 @@ func Initiator(router *gin.Engine) {
 	{
 		api.GET("/", FindTechnicians)
 		api.GET("/:id", FindByTechnicianID)
+		api.POST("/", RegisterTechnician)
 
 	}
 }
@@ -54,5 +55,30 @@ func FindByTechnicianID(c *gin.Context) {
 	}
 
 	response := helper.APIResponse("Detail of technician", http.StatusOK, "success", technician)
+	c.JSON(http.StatusOK, response)
+}
+
+func RegisterTechnician(c *gin.Context) {
+	var input TechnicianInput
+	err := c.ShouldBind(&input)
+	if err != nil {
+		errors := helper.FormatValidationError(err)
+		errorMessage := gin.H{"errors": errors}
+		response := helper.APIResponse("Register failed", http.StatusUnprocessableEntity, "error", errorMessage)
+		c.JSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	userRepo := NewRepository(database.DB)
+	userService := NewService(userRepo)
+
+	newUser, err := userService.RegisterTechnician(input)
+	if err != nil {
+		response := helper.APIResponse("Register failed", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response := helper.APIResponse("success", http.StatusOK, "success", newUser)
 	c.JSON(http.StatusOK, response)
 }

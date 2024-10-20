@@ -21,6 +21,7 @@ func Initiator(router *gin.Engine) {
 		api.GET("/user/:id", FindByUserID)
 		api.POST("/", Save)
 		api.PUT("/pickup/:id", UpdatePickup)
+		api.PUT("/progress/:id", UpdateProgress)
 	}
 }
 
@@ -156,11 +157,7 @@ func UpdatePickup(c *gin.Context) {
 		return
 	}
 
-	var input OrderUpdateInput
 	currentUser := c.MustGet("currentUser").(user.User)
-
-	// Menyimpan ID teknisi dalam input
-	input.TechnicianID = currentUser.ID // Pastikan ini adalah ID, bukan objek User
 
 	orderService := NewService(NewRepository(database.DB))
 
@@ -189,16 +186,63 @@ func UpdatePickup(c *gin.Context) {
 		return
 	}
 
-	// Mengupdate status order ke "pickup"
-	order.Status = "pickup"
-
 	updateOrder := Order{
-		Status:       order.Status,
+		Status:       "pickup",
 		TechnicianID: currentUser.ID,
 	}
 
 	_, err = orderService.UpdatePickup(id, updateOrder)
 
+	if err != nil {
+		response := helper.APIResponse("Failed to update order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response := helper.APIResponse("Success to update order", http.StatusOK, "success", updateOrder)
+	c.JSON(http.StatusOK, response)
+}
+
+func UpdateProgress(c *gin.Context) {
+	orderID := c.Param("id")
+
+	id, err := strconv.Atoi(orderID)
+	if err != nil {
+		response := helper.APIResponse("Failed to get order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// Memeriksa apakah pengguna adalah teknisi
+	if isTechnician, err := CheckIfTechnician(c); err != nil || !isTechnician {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	currentUser := c.MustGet("currentUser").(user.User)
+
+	orderService := NewService(NewRepository(database.DB))
+
+	order, err := orderService.FindById(id)
+	if err != nil {
+		response := helper.APIResponse("Failed to get order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// Pastikan status order adalah "pickup" sebelum memperbarui
+	if order.Status != "pickup" {
+		response := helper.APIResponse("Order can only be updated from 'pickup' status", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	updateOrder := Order{
+		Status:       "progress",
+		TechnicianID: currentUser.ID,
+	}
+
+	_, err = orderService.UpdatePickup(id, updateOrder)
 	if err != nil {
 		response := helper.APIResponse("Failed to update order", http.StatusBadRequest, "error", nil)
 		c.JSON(http.StatusBadRequest, response)
