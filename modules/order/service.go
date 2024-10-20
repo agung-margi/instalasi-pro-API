@@ -3,8 +3,9 @@ package order
 type Service interface {
 	CreateOrder(input OrderInput) (Order, error)
 	Update(id int, order Order) (Order, error)
+	UpdatePickup(id int, updateOrder Order) ([]Order, error)
 	// FindAll() ([]Order, error)
-	// FindById(id int) (Order, error)
+	FindById(id int) (Order, error)
 	// FindByUserID(id int) ([]Order, error)
 }
 
@@ -55,6 +56,14 @@ func (s *service) FindById(id int) (Order, error) {
 
 func (s *service) FindByUserID(id int) ([]Order, error) {
 	orders, err := s.repository.FindByUserID(id)
+	if err != nil {
+		return orders, err
+	}
+	return orders, nil
+}
+
+func (s *service) UpdatePickup(id int, updateOrder Order) ([]Order, error) {
+	orders, err := s.repository.UpdatePickup(id, updateOrder)
 	if err != nil {
 		return orders, err
 	}

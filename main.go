@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"instalasi-pro/configs"
 	"instalasi-pro/database"
 	"instalasi-pro/modules/order"
 	"instalasi-pro/modules/product"
+	"instalasi-pro/modules/technician"
 	"instalasi-pro/modules/user"
 	"log"
 
@@ -12,6 +14,7 @@ import (
 )
 
 func main() {
+	configs.LoadConfig()
 	database.Connection()
 	database.DB.AutoMigrate(&user.User{})
 	database.DB.AutoMigrate(&product.Product{})
@@ -21,6 +24,7 @@ func main() {
 	user.Initiator(router)
 	product.Initiator(router)
 	order.Initiator(router)
+	technician.Initiator(router)
 	router.SetTrustedProxies(nil)
 
 	go func() {

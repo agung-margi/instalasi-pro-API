@@ -1,0 +1,17 @@
+{
+    "database": {
+      "host": "",
+      "port": "",
+      "user": "",
+      "password": "",
+      "dbname": "",
+      "sslmode": "disable",
+      "timezone": "Asia/Jakarta"
+    },
+    "jwt_secret_key": "",
+    "cloudinary": {
+      "cloud_name": "",
+      "api_key": "",
+      "api_secret": ""
+    }
+  }

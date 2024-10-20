@@ -12,6 +12,7 @@ type Repository interface {
 	FindByUserID(id int) ([]Order, error)
 	Create(order Order) (Order, error)
 	Update(id int, order Order) (Order, error)
+	UpdatePickup(id int, updateOrder Order) ([]Order, error)
 }
 
 func NewRepository(db *gorm.DB) *repository {
@@ -51,4 +52,13 @@ func (r *repository) Update(id int, order Order) (Order, error) {
 		return order, err
 	}
 	return order, nil
+}
+
+func (r *repository) UpdatePickup(id int, updateOrder Order) ([]Order, error) {
+	var orders []Order
+	err := r.db.Model(&orders).Where("id = ?", id).Updates(updateOrder).Error
+	if err != nil {
+		return orders, err
+	}
+	return orders, nil
 }
