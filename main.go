@@ -28,7 +28,6 @@ func main() {
 	product.Initiator(router)
 	order.Initiator(router)
 	technician.Initiator(router)
-	router.SetTrustedProxies(nil)
 
 	go func() {
 		if err := router.Run(":8080"); err != nil {
