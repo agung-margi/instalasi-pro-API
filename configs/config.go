@@ -15,16 +15,9 @@ type DatabaseConfig struct {
 	Timezone string `json:"timezone"`
 }
 
-type CloudinaryConfig struct {
-	CloudName string `json:"cloud_name"`
-	APIKey    string `json:"api_key"`
-	APISecret string `json:"api_secret"`
-}
-
 type Config struct {
-	Database     DatabaseConfig   `json:"database"`
-	JWTSecretKey string           `json:"jwt_secret_key"`
-	Cloudinary   CloudinaryConfig `json:"cloudinary"`
+	Database     DatabaseConfig `json:"database"`
+	JWTSecretKey string         `json:"jwt_secret_key"`
 }
 
 var AppConfig Config
