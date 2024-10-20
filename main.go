@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"instalasi-pro/configs"
 	"instalasi-pro/database"
 	"instalasi-pro/modules/invoice"
@@ -24,18 +23,18 @@ func main() {
 	database.DB.AutoMigrate(&invoice.Invoice{})
 
 	router := gin.Default()
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "API Instalasi-Pro",
+		})
+	})
 	user.Initiator(router)
 	product.Initiator(router)
 	order.Initiator(router)
 	technician.Initiator(router)
 
-	go func() {
-		if err := router.Run(":8080"); err != nil {
-			log.Fatal("Failed to start server: ", err)
-		}
-	}()
-
-	fmt.Println("Server berjalan pada http://localhost:8080")
-	select {}
+	if err := router.Run(":8080"); err != nil {
+		log.Fatal("Failed to start server: ", err)
+	}
 
 }
