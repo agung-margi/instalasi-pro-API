@@ -15,6 +15,8 @@ func Initiator(router *gin.Engine) {
 		api.POST("/register", Register)
 		api.POST("/login", Login)
 		api.PUT("/:id", UpdateUser)
+		api.GET("/:id", FindByID)
+		api.GET("/", FindAll)
 	}
 }
 
@@ -41,7 +43,9 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	response := helper.APIResponse("success", http.StatusOK, "success", newUser)
+	formatter := FormatRegister(newUser)
+
+	response := helper.APIResponse("success", http.StatusOK, "success", formatter)
 	c.JSON(http.StatusOK, response)
 }
 func Login(c *gin.Context) {
@@ -97,6 +101,44 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	response := helper.APIResponse("success", http.StatusOK, "success", newUser)
+	formatter := FormatUser(newUser)
+
+	response := helper.APIResponse("success", http.StatusOK, "success", formatter)
+	c.JSON(http.StatusOK, response)
+}
+
+func FindByID(c *gin.Context) {
+	userID := c.Param("id")
+
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		response := helper.APIResponse("Invalid user ID", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	userService := NewUserService(NewRepository(database.DB))
+	user, err := userService.GetUser(id)
+	if err != nil {
+		response := helper.APIResponse("Get user failed", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	formatter := FormatUsers(user)
+
+	response := helper.APIResponse("success", http.StatusOK, "success", formatter)
+	c.JSON(http.StatusOK, response)
+}
+
+func FindAll(c *gin.Context) {
+	userService := NewUserService(NewRepository(database.DB))
+	users, err := userService.GetUser(0)
+	if err != nil {
+		response := helper.APIResponse("Get users failed", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	formatter := FormatUsers(users)
+	response := helper.APIResponse("success", http.StatusOK, "success", formatter)
 	c.JSON(http.StatusOK, response)
 }

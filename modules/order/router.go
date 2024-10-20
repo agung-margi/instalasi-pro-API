@@ -5,6 +5,7 @@ import (
 	"instalasi-pro/database"
 	helper "instalasi-pro/helpers"
 	"instalasi-pro/middleware/auth"
+	"instalasi-pro/modules/invoice"
 	"instalasi-pro/modules/user"
 	"net/http"
 	"strconv"
@@ -22,6 +23,10 @@ func Initiator(router *gin.Engine) {
 		api.POST("/", Save)
 		api.PUT("/pickup/:id", UpdatePickup)
 		api.PUT("/progress/:id", UpdateProgress)
+		api.PUT("/issue/:id", UpdateIssue)
+		api.PUT("/cancel/:id", UpdateCancel)
+		api.PUT("/complete/:id", UpdateComplete)
+
 	}
 }
 
@@ -249,6 +254,168 @@ func UpdateProgress(c *gin.Context) {
 		return
 	}
 
+	response := helper.APIResponse("Success to update order", http.StatusOK, "success", updateOrder)
+	c.JSON(http.StatusOK, response)
+}
+
+func UpdateCancel(c *gin.Context) {
+	orderID := c.Param("id")
+
+	id, err := strconv.Atoi(orderID)
+	if err != nil {
+		response := helper.APIResponse("Failed to get order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// Memeriksa apakah pengguna adalah teknisi
+	if isTechnician, err := CheckIfTechnician(c); err != nil || !isTechnician {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	currentUser := c.MustGet("currentUser").(user.User)
+
+	orderService := NewService(NewRepository(database.DB))
+
+	order, err := orderService.FindById(id)
+	if err != nil {
+		response := helper.APIResponse("Failed to get order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// Pastikan status order adalah "pickup" sebelum memperbarui
+	if order.Status != "pickup" {
+		response := helper.APIResponse("Order can only be updated from 'pickup' status", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	updateOrder := Order{
+		Status:       "canceled",
+		TechnicianID: currentUser.ID,
+	}
+
+	_, err = orderService.UpdatePickup(id, updateOrder)
+	if err != nil {
+		response := helper.APIResponse("Failed to update order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response := helper.APIResponse("Success to update order", http.StatusOK, "success", updateOrder)
+	c.JSON(http.StatusOK, response)
+}
+
+func UpdateIssue(c *gin.Context) {
+	orderID := c.Param("id")
+
+	id, err := strconv.Atoi(orderID)
+	if err != nil {
+		response := helper.APIResponse("Failed to get order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// Memeriksa apakah pengguna adalah teknisi
+	if isTechnician, err := CheckIfTechnician(c); err != nil || !isTechnician {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	currentUser := c.MustGet("currentUser").(user.User)
+
+	orderService := NewService(NewRepository(database.DB))
+
+	order, err := orderService.FindById(id)
+	if err != nil {
+		response := helper.APIResponse("Failed to get order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// Pastikan status order adalah "pickup" sebelum memperbarui
+	if order.Status != "pickup" {
+		response := helper.APIResponse("Order can only be updated from 'pickup' status", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	updateOrder := Order{
+		Status:       "issued",
+		TechnicianID: currentUser.ID,
+	}
+
+	_, err = orderService.UpdatePickup(id, updateOrder)
+	if err != nil {
+		response := helper.APIResponse("Failed to update order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response := helper.APIResponse("Success to update order", http.StatusOK, "success", updateOrder)
+	c.JSON(http.StatusOK, response)
+}
+
+func UpdateComplete(c *gin.Context) {
+	orderID := c.Param("id")
+
+	id, err := strconv.Atoi(orderID)
+	if err != nil {
+		response := helper.APIResponse("Failed to get order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// Memeriksa apakah pengguna adalah teknisi
+	if isTechnician, err := CheckIfTechnician(c); err != nil || !isTechnician {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	currentUser := c.MustGet("currentUser").(user.User)
+
+	orderService := NewService(NewRepository(database.DB))
+
+	order, err := orderService.FindById(id)
+	if err != nil {
+		response := helper.APIResponse("Failed to get order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// Pastikan status order adalah "pickup" sebelum memperbarui
+	if order.Status != "progress" {
+		response := helper.APIResponse("Order can only be updated from 'progress' status", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	updateOrder := Order{
+		Status:       "completed",
+		TechnicianID: currentUser.ID,
+	}
+
+	_, err = orderService.UpdatePickup(id, updateOrder)
+	if err != nil {
+		response := helper.APIResponse("Failed to update order", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
+	invoiceInput := invoice.Invoice{
+		OrderID:       order.ID,
+		Total:         15000,
+		CustomerEmail: "fjIYn@example.com",
+	}
+
+	fmt.Println(invoiceInput)
+
+	if err != nil {
+		response := helper.APIResponse("Failed to create invoice", http.StatusBadRequest, "error", nil)
+		c.JSON(http.StatusBadRequest, response)
+		return
+	}
 	response := helper.APIResponse("Success to update order", http.StatusOK, "success", updateOrder)
 	c.JSON(http.StatusOK, response)
 }

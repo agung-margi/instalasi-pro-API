@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"instalasi-pro/configs"
 	"instalasi-pro/database"
+	"instalasi-pro/modules/invoice"
 	"instalasi-pro/modules/order"
 	"instalasi-pro/modules/product"
 	"instalasi-pro/modules/technician"
@@ -16,9 +17,11 @@ import (
 func main() {
 	configs.LoadConfig()
 	database.Connection()
+
 	database.DB.AutoMigrate(&user.User{})
 	database.DB.AutoMigrate(&product.Product{})
 	database.DB.AutoMigrate(&order.Order{})
+	database.DB.AutoMigrate(&invoice.Invoice{})
 
 	router := gin.Default()
 	user.Initiator(router)
