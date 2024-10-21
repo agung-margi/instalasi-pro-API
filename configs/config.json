@@ -1,12 +1,12 @@
 {
-    "database": {
-      "host": "postgres.railway.internal",
-      "port": "5432",
-      "user": "postgres",
-      "password": "fLSDRlORUuGFobwmJsrWgubMAkmysRkx",
-      "dbname": "railway",
-      "sslmode": "disable",
-      "timezone": "Asia/Jakarta"
-    },
-    "jwt_secret_key": "iYjuhasmXjsaSqsu&9&769sn"
-  }
+  "database": {
+    "host": "127.0.0.1",
+    "port": "5400",
+    "user": "postgres",
+    "password": "Bekasi2021$",
+    "dbname": "insalasi-pro",
+    "sslmode": "disable",
+    "timezone": "Asia/Jakarta"
+  },
+  "jwt_secret_key": "iYjuhasmXjsaSqsu&9&769sn"
+}
